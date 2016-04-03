@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+
+error() {
+	echo "ERROR:"$1
+	exit 1
+}
+if [[ $EUID -ne 0 ]]; then
+   error "must be run as root to install" 
+fi
+
+PY_VERSION=$(python -c 'import sys; print(".".join(map(str, sys.version_info[:3])))')
+if [[ $? -ne 0 ]]; then
+	error "Python not detected on this system."
+fi
+
+if [[ ! $PY_VERSION =~ ^3 ]]; then
+	error "Python version >= 3.5.1 required"
+fi
+
+NAME=mediamigr8tr
+MAIN=main.py
+SETUP=setup.py
+BASEDIR=$(dirname "$0")
+TARGET_DIR=/usr/local/$NAME
+
+mkdir -p /usr/local/$NAME
+python $BASEDIR/$SETUP install
+cp $BASEDIR/$MAIN $TARGET_DIR/$MAIN
+
+cat > /etc/init/$NAME.conf << EOF
+description "$NAME"
+ 
+start on runlevel [2345]
+stop on runlevel [!2345]
+respawn
+respawn limit 10 5
+
+chdir $TARGET_DIR
+script
+	exec $TARGET_DIR/$MAIN >> /var/log/upstart/$NAME.log 2>&1
+end script
+
+post-start script
+   echo "$NAME started"
+end script
+
+post-end script
+   echo "$NAME terminated"
+end script
+EOF
+
+service $NAME start

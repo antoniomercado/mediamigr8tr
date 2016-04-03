@@ -6,14 +6,15 @@ import magic
 import re
 import shutil
 import time
+import signal
+import sys
 from guessit import guessit
 
-# The watch manager stores the watches and provides operations on watches
 wm = pyinotify.WatchManager()
 mask = pyinotify.IN_CREATE  | pyinotify.IN_MOVED_TO # watched events
-SOURCE_DIR = '~/completed';
-TARGET_MOVIE_DIR = '~/media/Movies/';
-TARGET_TV_SHOW_DIR = '~/media/TV Shows/';
+SOURCE_DIR = '/home/tony/completed';
+TARGET_MOVIE_DIR = '/home/tony/media/Movies/';
+TARGET_TV_SHOW_DIR = '/home/tony/media/TV Shows/';
 
 class EventHandler(pyinotify.ProcessEvent):
 	def is_video(self,x):
@@ -86,17 +87,33 @@ class EventHandler(pyinotify.ProcessEvent):
 	def process_IN_MOVED_TO(self, event):
 		print("Incoming Source File (Move):", event.pathname)
 		self.move_file(event)
-				
+
+def on_loop(notifier):
+	pass
+
+def signal_handler(signal, frame):
+	wm.rm_watch(wdd[os.path.expanduser(SOURCE_DIR)], rec=True)
+	notifier.stop()
+	sys.exit(0)
+		
 def main():
-	handler = EventHandler()
-	notifier = pyinotify.ThreadedNotifier(wm, handler)
-	notifier.start()
+	pidDir = "/var/run/";
+	logDir = "/var/log/"
+	name = "mediamigr8tr"
+	
+	notifier = pyinotify.Notifier(wm, EventHandler())
 	wdd = wm.add_watch(os.path.expanduser(SOURCE_DIR), mask, rec=True)
+	signal.signal(signal.SIGINT, signal_handler)
+	signal.signal(signal.SIGTERM, signal_handler)
+
 	try:
-		notifier.loop(daemonize=True, callback=on_loop_func, 
-			pid_file='/tmp/pyinotify.pid', stdout='/tmp/pyinotify.log')
-	except pyinotify.NotifierError, err:
-		print >> sys.stderr, err
+		print("Starting Daemon")
+		notifier.loop(daemonize=True, callback=on_loop, 
+			pid_file=pidDir + name + ".pid", stdout=logDir + name + ".log")
+	except pyinotify.NotifierError as err:
+		print("error here")
+		print >> sys.stderr, err.args
+		sys.exit(1)
 
 if __name__ == "__main__":
     main()
