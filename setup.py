@@ -1,8 +1,10 @@
 from setuptools import setup
 
 setup(
-	  name="Media-Alphabetizer",
+	  name="MediaMigr8tr",
 	  version="1.0",
 	  install_requires=[
-	  "inotify"
+	  "pyinotify",
+	  "python-magic",
+	  "guessit"
 	  ])
