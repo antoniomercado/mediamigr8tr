@@ -89,7 +89,7 @@ class EventHandler(pyinotify.ProcessEvent):
 				
 def main():
 	handler = EventHandler()
-	notifier = pyinotify.Notifier(wm, handler)
+	notifier = pyinotify.ThreadedNotifier(wm, handler)
 	notifier.start()
 	wdd = wm.add_watch(os.path.expanduser(SOURCE_DIR), mask, rec=True)
 	try:
