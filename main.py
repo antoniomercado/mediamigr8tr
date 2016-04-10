@@ -1,5 +1,22 @@
 #!/usr/bin/env python3
 #encoding: UTF-8
+
+#################################################################################
+#   Copyright 2016 Antonio Mercado <antonio.b.mercado@gmail/com                 #
+#																				#
+# Licensed under the Apache License, Version 2.0 (the "License");				#
+# you may not use this file except in compliance with the License.				#
+# You may obtain a copy of the License at										#
+#																				#
+#  http://www.apache.org/licenses/LICENSE-2.0									#
+#																				#
+# Unless required by applicable law or agreed to in writing, software			#
+# distributed under the License is distributed on an "AS IS" BASIS,				#
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.		#
+# See the License for the specific language governing permissions and			#
+# limitations under the License.													#
+#################################################################################
+
 import pyinotify
 import os
 import magic
@@ -17,7 +34,7 @@ from guessit import guessit
 configDir = str(sys.argv[1])
 if (os.path.isdir(configDir) == False):
 	print("Error, could not find configuration directory [" + configDir + "]")
-	sys.exit(0)
+	sys.exit(1)
 
 with open(configDir + "/config.json", "rt") as in_file:
     text = in_file.read()
@@ -30,6 +47,16 @@ mask = pyinotify.IN_CREATE  | pyinotify.IN_MOVED_TO # watched events
 SOURCE_DIR = config.get("source_dir");
 TARGET_MOVIE_DIR = config.get("movie_dir")
 TARGET_TV_SHOW_DIR = config.get("tv_show_dir")
+
+if (os.path.isdir(SOURCE_DIR) == False):
+	print("Cannot find source dir", SOURCE_DIR)
+	sys.exit(1)
+if (os.path.isdir(TARGET_MOVIE_DIR) == False):
+	print("Cannot find target movie dir", TARGET_MOVIE_DIR)
+	sys.exit(1)
+if (os.path.isdir(TARGET_TV_SHOW_DIR) == False):
+	print("Cannot find target tv show dir", TARGET_TV_SHOW_DIR)
+	sys.exit(1)
 
 class EventHandler(pyinotify.ProcessEvent):
 	

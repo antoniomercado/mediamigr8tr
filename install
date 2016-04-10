@@ -18,14 +18,13 @@ if [[ ! $PY_VERSION =~ ^3 ]]; then
 fi
 
 cat > /tmp/check_setup_tools.py << EOF
-	import sys
-	try:
-		import setuptools
-	except ImportError:
-		sys.exit(1)
-	else:
-		sys.exit(0)
-
+import sys
+try:
+	import setuptools
+except ImportError:
+	sys.exit(1)
+else:
+	sys.exit(0)
 EOF
 chmod +x /tmp/check_setup_tools.py
 python3 /tmp/check_setup_tools.py
@@ -35,7 +34,7 @@ if [ $EXIT_CODE -eq 1 ]; then
 fi
 rm /tmp/check_setup_tools.py
 
-if [[ $(which ffmpeg | wc -l) -eq ]]; then
+if [[ $(which ffmpeg | wc -l) -eq 0 ]]; then
 	sudo apt-get install -y ffmpeg
 fi
 
