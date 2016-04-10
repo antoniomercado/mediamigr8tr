@@ -5,10 +5,10 @@ error() {
 	exit 1
 }
 if [[ $EUID -ne 0 ]]; then
-   error "must be run as root to install" 
+   error "must use sudo to install" 
 fi
 
-PY_VERSION=$(python -c 'import sys; print(".".join(map(str, sys.version_info[:3])))')
+PY_VERSION=$(python3 -c 'import sys; print(".".join(map(str, sys.version_info[:3])))')
 if [[ $? -ne 0 ]]; then
 	error "Python not detected on this system."
 fi
@@ -20,12 +20,66 @@ fi
 NAME=mediamigr8tr
 MAIN=main.py
 SETUP=setup.py
-BASEDIR=$(dirname "$0")
+BASE_DIR=$(dirname "$0")
 TARGET_DIR=/usr/local/$NAME
+DATA_DIR=$HOME/.mediamigr8tr/
+SOURCE_DIR=$HOME/Downloads
+MOVIE_DIR="$HOME/Videos/Movies"
+TV_SHOW_DIR="$HOME/Videos/TV Shows"
+USER_SOURCE_DIR=""
+USER_MOVIE_DIR=""
+USER_TV_SHOW_DIR=""
 
-mkdir -p /usr/local/$NAME
-python $BASEDIR/$SETUP install
-cp $BASEDIR/$MAIN $TARGET_DIR/$MAIN
+
+echo "Enter the location of your media download folder and press Enter [$SOURCE_DIR] [ENTER]"
+read USER_SOURCE_DIR
+
+if [[ ! -z $USER_SOURCE_DIR ]]; then
+	SOURCE_DIR=$USER_SOURCE_DIR
+fi
+
+echo "Enter the location of your movie folder [$MOVIE_DIR] [ENTER]"
+read USER_MOVIE_DIR
+
+if [[ ! -z $USER_MOVIE_DIR ]]; then
+	MOVIE_DIR=$USER_MOVIE_DIR
+fi
+
+echo "Enter the location of your TV show folder? [$TV_SHOW_DIR] [ENTER]"
+read USER_TV_SHOW_DIR
+
+if [[ ! -z $USER_TV_SHOW_DIR ]]; then
+	TV_SHOW_DIR=$USER_TV_SHOW_DIR
+fi
+
+if [[ ! -d $DATA_DIR ]]; then
+	mkdir -p $DATA_DIR
+fi
+
+if [[ ! -d $SOURCE_DIR ]]; then
+	mkdir -p $SOURCE_DIR
+fi
+
+if [[ ! -d $MOVIE_DIR ]]; then
+	mkdir -p $MOVIE_DIR
+fi
+
+if [[ ! -d $TV_SHOW_DIR ]]; then
+	mkdir -p $TV_SHOW_DIR
+fi
+
+
+cat > $DATA_DIR/config.json << EOF
+{
+	"source_dir": "$SOURCE_DIR",
+	"movie_dir": "$MOVIE_DIR",
+	"tv_show_dir": "$TV_SHOW_DIR"
+}
+EOF
+
+mkdir -p $TARGET_DIR
+python3 $BASE_DIR/$SETUP install
+cp $BASE_DIR/$MAIN $TARGET_DIR/$MAIN
 
 cat > /etc/init/$NAME.conf << EOF
 description "$NAME"
@@ -37,16 +91,33 @@ respawn limit 10 5
 
 chdir $TARGET_DIR
 script
-	exec $TARGET_DIR/$MAIN >> /var/log/upstart/$NAME.log 2>&1
+	exec $TARGET_DIR/$MAIN $DATA_DIR >> /var/log/upstart/$NAME.log 2>&1
 end script
 
 post-start script
    echo "$NAME started"
 end script
 
-post-end script
-   echo "$NAME terminated"
-end script
 EOF
 
+cat > /lib/systemd/system/$NAME.service << EOF
+[Unit]
+Description=$NAME Service
+
+[Service]
+ExecStart=$TARGET_DIR/$MAIN $DATA_DIR
+PIDFile=/var/run/$NAME.pid
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+rm /etc/systemd/system/$NAME.service
+ln -s /lib/systemd/system/$NAME.service /etc/systemd/system/$NAME.service
+
+if [[ $(which systemctl | wc -l) -gt 0 ]]; then
+	systemctl daemon-reload
+fi
+
 service $NAME start
+
