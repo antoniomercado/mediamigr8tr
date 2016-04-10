@@ -57,19 +57,19 @@ class EventHandler(pyinotify.ProcessEvent):
 	def move_movie(self, firstLetter, pathName, srcFileName):
 		realMoviePath = os.path.expanduser(TARGET_MOVIE_DIR)
 		if (firstLetter.isdigit() == False):
-			targetPathName = realMoviePath + firstLetter.upper()
+			targetPathName = realMoviePath + "/" + firstLetter.upper()
 			if (os.path.isdir(targetPathName) == True):
 				shutil.move(pathName, targetPathName + "/" + srcFileName)
-			elif (os.path.isdir(realMoviePath + firstLetter.lower()) == True):
-				targetPathName = realMoviePath + firstLetter.lower()
+			elif (os.path.isdir(realMoviePath + "/" + firstLetter.lower()) == True):
+				targetPathName = realMoviePath + "/" + firstLetter.lower()
 				shutil.move(pathName, targetPathName + "/" + srcFileName)
 			else:
 				os.makedirs(targetPathName)
 				shutil.move(pathName, targetPathName + "/" + srcFileName)
 		else:
-			if(os.path.isdir(realMoviePath + "00-99") == False):
-				os.makedirs(realMoviePath + "00-99")
-			targetPathName = realMoviePath + "00-99"
+			if(os.path.isdir(realMoviePath + "/00-99") == False):
+				os.makedirs(realMoviePath + "/00-99")
+			targetPathName = realMoviePath + "/00-99"
 			shutil.move(pathName, targetPathName + "/" + srcFileName)
 		print('Timestamp: {:%Y-%m-%d %H:%M:%S}'.format(datetime.datetime.now()) + " File Moved To:", targetPathName + "/" + srcFileName)
 	
@@ -78,7 +78,7 @@ class EventHandler(pyinotify.ProcessEvent):
 		seasonFolderName = ""
 		if (season < 9):
 			seasonFolderName = "0" + str(season)
-		targetPath = realShowPath + targetFolderName + "/Season " + seasonFolderName;
+		targetPath = realShowPath + "/" + targetFolderName + "/Season " + seasonFolderName;
 		if (os.path.isdir(targetPath) == False):
 			os.makedirs(targetPath)
 		shutil.move(srcPathName, targetPath + "/" + srcFileName)

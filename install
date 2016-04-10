@@ -17,6 +17,29 @@ if [[ ! $PY_VERSION =~ ^3 ]]; then
 	error "Python version >= 3.5.1 required"
 fi
 
+cat > /tmp/check_setup_tools.py << EOF
+	import sys
+	try:
+		import setuptools
+	except ImportError:
+		sys.exit(1)
+	else:
+		sys.exit(0)
+
+EOF
+chmod +x /tmp/check_setup_tools.py
+python3 /tmp/check_setup_tools.py
+EXIT_CODE=$?
+if [ $EXIT_CODE -eq 1 ]; then
+	sudo apt-get install -y python3-setuptools
+fi
+rm /tmp/check_setup_tools.py
+
+if [[ $(which ffmpeg | wc -l) -eq ]]; then
+	sudo apt-get install -y ffmpeg
+fi
+
+
 NAME=mediamigr8tr
 MAIN=main.py
 SETUP=setup.py
