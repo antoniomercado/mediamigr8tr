@@ -79,7 +79,7 @@ class EventHandler(pyinotify.ProcessEvent):
 			minutes = int(match.group(3))
 			seconds = int(match.group(4))
 			miliseconds = int(match.group(5))
-			return minutes > 10
+			return hours > 0 or minutes > 10
 	
 	def move_movie(self, firstLetter, pathName, srcFileName):
 		realMoviePath = os.path.expanduser(TARGET_MOVIE_DIR)
